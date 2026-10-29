@@ -1,0 +1,74 @@
+<?php
+include 'conexao.php';
+include 'funcoes.php';
+
+// 1) Números do painel: COUNT(*) conta as linhas de cada tabela
+$total_clientes = $pdo->query('SELECT COUNT(*) FROM cliente')->fetchColumn();
+$total_produtos = $pdo->query('SELECT COUNT(*) FROM produto')->fetchColumn();
+$total_vendas   = $pdo->query('SELECT COUNT(*) FROM venda')->fetchColumn();
+
+// 2) Busca: o que foi digitado chega pela URL (index.php?busca=fone)
+$busca = '';
+if (isset($_GET['busca'])) {
+    $busca = $_GET['busca'];
+}
+
+// 3) Produtos da vitrine. LIKE '%fone%' acha "fone" em qualquer parte do nome
+$sql = $pdo->prepare('SELECT * FROM produto WHERE nome LIKE ? ORDER BY nome');
+$sql->execute(['%' . $busca . '%']);
+$produtos = $sql->fetchAll();
+
+// Variáveis que o topo.php usa
+$titulo = 'Vitrine';
+$pagina = 'index.php';
+include 'topo.php';
+?>
+
+<div class="painel">
+    <div class="numero">
+        <img src="assets/imagens/icone-clientes.png" alt="">
+        <div>
+            <div class="valor"><?= $total_clientes ?></div>
+            <div class="rotulo">clientes</div>
+        </div>
+    </div>
+    <div class="numero">
+        <img src="assets/imagens/icone-produtos.png" alt="">
+        <div>
+            <div class="valor"><?= $total_produtos ?></div>
+            <div class="rotulo">produtos</div>
+        </div>
+    </div>
+    <div class="numero">
+        <img src="assets/imagens/icone-vendas.png" alt="">
+        <div>
+            <div class="valor"><?= $total_vendas ?></div>
+            <div class="rotulo">vendas</div>
+        </div>
+    </div>
+</div>
+
+<div class="titulo-pagina">
+    <h1>Vitrine</h1>
+    <form method="get" action="index.php" class="busca">
+        <input type="text" name="busca" value="<?= e($busca) ?>" placeholder="Buscar produto...">
+        <button type="submit" class="botao">Buscar</button>
+    </form>
+</div>
+
+<?php if (count($produtos) == 0) { ?>
+    <div class="aviso">Nenhum produto encontrado para "<?= e($busca) ?>".</div>
+<?php } ?>
+
+<div class="vitrine">
+    <?php foreach ($produtos as $produto) { ?>
+        <div class="card">
+            <img src="<?= e($produto['imagem']) ?>" alt="<?= e($produto['nome']) ?>">
+            <h2><?= e($produto['nome']) ?></h2>
+            <p><?= e($produto['descricao']) ?></p>
+            <div class="preco"><?= dinheiro($produto['preco']) ?></div>
+        </div>
+    <?php } ?>
+</div>
+
+<?php include 'rodape.php'; ?>
